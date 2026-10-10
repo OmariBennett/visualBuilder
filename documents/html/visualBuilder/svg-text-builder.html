@@ -1,0 +1,1223 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="/src/assets/css/reset.css" />
+		<link rel="stylesheet" href="/src/assets/css/style.css" />
+		<title>SVG Text Builder</title>
+		<style>
+			/* _ visualBuilder: main content | CSS selector GUI */
+			:root {
+				--_line: oklch(from var(--canvas-text-color, #111) l c h / 0.15);
+				--_muted: oklch(from var(--canvas-text-color, #111) l c h / 0.55);
+				--_code-bg: oklch(from var(--canvas-text-color, #111) l c h / 0.05);
+				--_syntax-selector: light-dark(oklch(52% 0.16 329), oklch(78% 0.12 329));
+				--_syntax-property: light-dark(oklch(50% 0.12 225), oklch(80% 0.1 225));
+				--_syntax-value: light-dark(oklch(50% 0.13 140), oklch(82% 0.15 140));
+				--_syntax-comment: oklch(from var(--canvas-text-color, #111) l c h / 0.45);
+			}
+
+			body {
+				font-family: var(--sanserif, sans-serif);
+				font-size: var(--font-size-400, 1rem);
+				color: var(--canvas-text-color, #111);
+				background: var(--canvas-color, #fff);
+				margin: 0;
+			}
+
+			.visual-builder {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) minmax(22rem, 34rem);
+				min-block-size: 100dvh;
+
+				@media (width < 56rem) {
+					grid-template-columns: minmax(0, 1fr);
+				}
+			}
+
+			/* ^ Main content area *******************/
+			.main-content {
+				display: grid;
+				grid-template-rows: auto 1fr auto;
+				gap: 1.25rem;
+				padding: 1.5rem;
+				min-inline-size: 0;
+			}
+
+			.main-content header h1 {
+				font-family: var(--serif, serif);
+				font-size: var(--font-size-700, 2rem);
+				font-weight: var(--font-weight-semi-light, 400);
+				margin-block-end: 0.75rem;
+			}
+
+			.main-content header p {
+				color: var(--_muted);
+				font-size: var(--font-size-300, 0.8rem);
+			}
+
+			.stage {
+				display: grid;
+				place-items: start;
+				overflow: auto;
+				padding: 1rem;
+				border: 1px solid var(--_line);
+				border-radius: 0.5rem;
+				background-image: radial-gradient(var(--_line) 1px, transparent 1px);
+				background-size: 1rem 1rem;
+			}
+
+			/* the drawing surface — drag the corner to resize. It stays white like
+			   paper in both themes, so the default black fill is visible */
+			.preview-frame {
+				inline-size: 40em;
+				max-inline-size: 100%;
+				min-inline-size: 4em;
+				min-block-size: 8em;
+				resize: horizontal;
+				overflow: auto;
+				padding: 1rem 1.25rem;
+				border: 1px dashed oklch(from var(--canvas-text-color, #111) l c h / 0.35);
+				border-radius: 0.4rem;
+				background: #fff;
+				color: #111;
+			}
+
+			.sample-field {
+				display: flex;
+				align-items: center;
+				gap: 0.5rem;
+				margin-block-end: 0.5rem;
+				font-size: var(--font-size-300, 0.8rem);
+				color: var(--_muted);
+
+				input {
+					flex: 1;
+					font: inherit;
+					color: var(--canvas-text-color, #111);
+					padding: 0.3em 0.5em;
+					border: 1px solid var(--_line);
+					border-radius: 0.3rem;
+					background: var(--canvas-color, #fff);
+				}
+			}
+
+			.paper {
+				display: block;
+				inline-size: 100%;
+				block-size: 11rem;
+				overflow: visible;
+			}
+
+			.sample {
+				font-size: 2rem;
+			}
+
+			/* crosshair on the text's x/y anchor point */
+			.guides line {
+				stroke: oklch(60% 0.2 25 / 0.55);
+				stroke-dasharray: 3 3;
+			}
+
+			.frame-size {
+				margin-block-start: 0.5rem;
+				font-family: var(--monospace, monospace);
+				font-size: var(--font-size-300, 0.8rem);
+				color: var(--_muted);
+			}
+
+			.output {
+				display: grid;
+				gap: 0.5rem;
+			}
+
+			.output-actions {
+				display: flex;
+				gap: 0.5rem;
+				align-items: center;
+			}
+
+			.output-actions span {
+				font-size: var(--font-size-300, 0.8rem);
+				color: var(--_muted);
+			}
+
+			.tool-btn {
+				font: inherit;
+				font-size: var(--font-size-300, 0.8rem);
+				padding: 0.35em 0.9em;
+				border: 1px solid var(--_line);
+				border-radius: 0.35rem;
+				background: var(--_code-bg);
+				color: inherit;
+				cursor: pointer;
+
+				&:hover {
+					border-color: var(--_syntax-property);
+				}
+			}
+
+			.code-out {
+				margin: 0;
+				padding: 0.75rem 1rem;
+				max-block-size: 14rem;
+				overflow: auto;
+				font-family: var(--monospace, monospace);
+				font-size: var(--font-size-300, 0.8rem);
+				white-space: pre;
+				background: var(--_code-bg);
+				border-radius: 0.4rem;
+			}
+
+			/* ^ CSS selector GUI area *******************/
+			.css-selector {
+				border-inline-start: 0.3rem solid var(--_line);
+				padding: 1.5rem 1.25rem;
+				overflow: auto;
+				max-block-size: 100dvh;
+				position: sticky;
+				inset-block-start: 0;
+				font-family: var(--monospace, monospace);
+				font-size: var(--font-size-300, 0.8rem);
+
+				@media (width < 56rem) {
+					border-inline-start: none;
+					border-block-start: 0.3rem solid var(--_line);
+					max-block-size: none;
+					position: static;
+				}
+			}
+
+			.element-rule {
+				display: grid;
+				gap: 0.15rem;
+			}
+
+			.element-selector {
+				color: var(--_syntax-selector);
+				font-weight: var(--font-weight-bold, 700);
+			}
+
+			/* carousel: one column per group, scrolled sideways, with dot markers */
+			.declaration-block {
+				padding-inline-start: 1.25rem;
+				margin-block-end: 2.5rem; /* room for the markers below */
+
+				overflow-x: auto;
+				overscroll-behavior-x: contain;
+				scroll-snap-type: x mandatory;
+				anchor-name: --declaration-carousel;
+
+				columns: 1;
+				block-size: 14lh;
+
+				&::column {
+					scroll-snap-align: center;
+				}
+
+				scroll-marker-group: after;
+
+				&::scroll-marker-group {
+					position: fixed;
+					position-anchor: --declaration-carousel;
+					position-area: block-end;
+					position-visibility: always;
+					margin: 10px;
+
+					display: grid;
+					grid-auto-columns: 20px;
+					grid-auto-flow: column;
+					gap: 20px;
+				}
+
+				&::column::scroll-marker {
+					content: ' ';
+					block-size: 20px;
+					border: 1px solid var(--_line);
+					border-radius: 50%;
+				}
+
+				&::column::scroll-marker:target-current {
+					background: var(--accent, var(--_syntax-property));
+				}
+			}
+
+			.declaration-group {
+				display: grid;
+				gap: 0.15rem;
+				break-before: column;
+				break-inside: avoid;
+			}
+
+			.declaration-comment {
+				color: var(--_syntax-comment);
+				padding-block-start: 0.75rem;
+			}
+
+			.declaration {
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				gap: 0.25rem 0.4rem;
+				padding: 0.2rem 0.35rem;
+				border-radius: 0.3rem;
+
+				&:hover {
+					background: var(--_code-bg);
+				}
+
+				/* an unticked declaration still shows the browser default, it just
+				   isn't written into the CSS, so dim it rather than strike it */
+				&:not(:has(.declaration-toggle:checked)) {
+					.declaration-property,
+					.declaration-value,
+					.declaration-colon,
+					.declaration-semicolon {
+						opacity: 0.55;
+					}
+				}
+			}
+
+			.declaration-toggle {
+				margin: 0;
+				accent-color: var(--_syntax-property);
+			}
+
+			.declaration-property {
+				color: var(--_syntax-property);
+			}
+
+			.declaration-value {
+				display: inline-flex;
+				flex-wrap: wrap;
+				align-items: center;
+				gap: 0.3rem;
+				color: var(--_syntax-value);
+
+				select,
+				input[type='text'] {
+					font: inherit;
+					color: inherit;
+				}
+
+				select,
+				input[type='text'] {
+					padding: 0.1em 0.25em;
+					border: 1px solid var(--_line);
+					border-radius: 0.25rem;
+					background: var(--canvas-color, #fff);
+				}
+
+				/* grows with what's typed, so short shadow lengths stay compact */
+				input[type='text'] {
+					field-sizing: content;
+					min-inline-size: 5ch;
+					max-inline-size: 18ch;
+
+					&:invalid {
+						border-color: oklch(60% 0.2 25);
+					}
+				}
+
+				.text-field {
+					display: inline-flex;
+					align-items: center;
+					gap: 0.2rem;
+				}
+
+				.step-btn,
+				.layer-btn {
+					min-inline-size: 1.4rem;
+					block-size: 1.4rem;
+					padding: 0 0.3em;
+					font: inherit;
+					line-height: 1;
+					border: 1px solid var(--_line);
+					border-radius: 0.25rem;
+					background: var(--_code-bg);
+					color: inherit;
+					cursor: pointer;
+
+					&:hover:enabled {
+						border-color: var(--_syntax-property);
+					}
+
+					&:disabled {
+						opacity: 0.4;
+						cursor: default;
+					}
+				}
+
+				label {
+					display: inline-flex;
+					align-items: center;
+					gap: 0.2rem;
+				}
+			}
+
+			.value-readout {
+				min-inline-size: 4ch;
+			}
+
+			/* layered values sit on their own indented lines, one per layer,
+			   written like formatted CSS: `a,` / `b;` */
+			.declaration-value.is-layered {
+				flex-basis: 100%;
+				display: grid;
+				justify-items: start;
+				padding-inline-start: 1.4rem;
+			}
+
+			.layers {
+				display: grid;
+				gap: 0.3rem;
+			}
+
+			/* add/remove layer: set apart from the value steppers */
+			.declaration-value .layer-btn {
+				border-style: dashed;
+				color: var(--_syntax-selector);
+
+				&:hover:enabled {
+					border-color: var(--_syntax-selector);
+				}
+			}
+
+			.layer {
+				display: inline-flex;
+				flex-wrap: wrap;
+				align-items: center;
+				gap: 0.3rem;
+
+				&::after {
+					content: ',';
+					color: var(--canvas-text-color, #111);
+				}
+
+				&:last-child::after {
+					content: ';';
+				}
+			}
+
+			.declaration:has(.is-layered) > .declaration-semicolon {
+				display: none;
+			}
+
+			.declaration-note {
+				flex-basis: 100%;
+				padding-inline-start: 1.4rem;
+				color: var(--_syntax-comment);
+			}
+
+			/* ^ OKLCH color picker (modelled on VS Code's) *******************/
+			.oklch-picker {
+				--_checker: repeating-conic-gradient(#ccc 0 25%, #fff 0 50%) 0 0 / 0.5rem 0.5rem;
+			}
+
+			/* swatch followed by the value it writes */
+			.oklch-field {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.4rem;
+			}
+
+			.oklch-swatch {
+				inline-size: 1.6rem;
+				block-size: 1.4rem;
+				padding: 0;
+				border: 1px solid var(--_line);
+				border-radius: 0.25rem;
+				background: linear-gradient(var(--swatch), var(--swatch)), var(--_checker);
+				cursor: pointer;
+			}
+
+			/* lives in the top layer, so it escapes the carousel's overflow */
+			.oklch-popover {
+				inset: auto;
+				margin: 0.35rem 0;
+				position-area: block-end span-inline-end;
+				position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+				inline-size: 19rem;
+				padding: 0;
+				overflow: hidden;
+				border: 1px solid oklch(from var(--canvas-text-color, #111) l c h / 0.25);
+				border-radius: 0.4rem;
+				background: var(--canvas-color, #fff);
+				color: var(--canvas-text-color, #111);
+				font-family: var(--sanserif, sans-serif);
+				font-size: var(--font-size-400, 1rem);
+				box-shadow: 0 0.4rem 1.2rem oklch(0% 0 0 / 0.3);
+
+				&:popover-open {
+					display: grid;
+				}
+			}
+
+			/* current color (click: cycle format) | original color (click: revert) */
+			.oklch-header {
+				display: grid;
+				grid-template-columns: 1fr auto;
+				block-size: 1.9rem;
+
+				button {
+					display: flex;
+					align-items: center;
+					gap: 0.4rem;
+					padding: 0 0.5rem;
+					font: inherit;
+					border: 0;
+					border-radius: 0;
+					background: linear-gradient(var(--swatch), var(--swatch)), var(--_checker);
+					color: var(--ink);
+					white-space: nowrap;
+					cursor: pointer;
+				}
+
+				svg {
+					flex: none;
+					inline-size: 1em;
+					block-size: 1em;
+				}
+
+				.oklch-original {
+					inline-size: 3.5rem;
+				}
+			}
+
+			.oklch-body {
+				display: grid;
+				grid-template-columns: 1fr 1.6rem 1.6rem;
+				gap: 1rem;
+				block-size: 10.5rem;
+				padding: 0.6rem 0.9rem 0.8rem 0.6rem;
+			}
+
+			.oklch-plane,
+			.oklch-strip {
+				position: relative;
+				touch-action: none;
+				outline-offset: 2px;
+			}
+
+			.oklch-plane canvas {
+				display: block;
+				inline-size: 100%;
+				block-size: 100%;
+			}
+
+			.oklch-plane-thumb {
+				position: absolute;
+				inline-size: 0.8rem;
+				block-size: 0.8rem;
+				border: 1.5px solid #fff;
+				border-radius: 50%;
+				box-shadow: 0 0 0 1px #0006;
+				translate: -50% -50%;
+				pointer-events: none;
+			}
+
+			.oklch-strip {
+				border: 1px solid oklch(from var(--canvas-text-color, #111) l c h / 0.35);
+				border-radius: 0.15rem;
+				background: var(--track);
+
+				&.alpha {
+					--track: linear-gradient(to bottom, oklch(var(--l) var(--c) var(--h)), transparent), var(--_checker);
+				}
+			}
+
+			.oklch-strip-thumb {
+				position: absolute;
+				inset-inline: -2px;
+				block-size: 5px;
+				border: 1px solid #0008;
+				background: #fff;
+				translate: 0 -50%;
+				pointer-events: none;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="visual-builder">
+			<!-- ── Main content area ─────────────────────────────────────────── -->
+			<main class="main-content">
+				<header>
+					<h1>SVG Text Properties</h1>
+					<p>
+						Tick a declaration on the right (or just change its value) to apply
+						it. Rows marked as attributes are written onto the
+						<code>&lt;text&gt;</code> element; the rest are CSS. The dashed
+						crosshair marks the text's x/y anchor, so text-anchor and
+						dominant-baseline show which point they align to.
+					</p>
+				</header>
+
+				<div class="stage">
+					<div>
+						<label class="sample-field">
+							sample text
+							<input class="sample-input" type="text" spellcheck="false" />
+						</label>
+						<div class="preview-frame">
+							<svg class="paper" xmlns="http://www.w3.org/2000/svg">
+								<g class="guides" aria-hidden="true">
+									<line class="guide-x" y1="0" y2="100%" />
+									<line class="guide-y" x1="0" x2="100%" />
+								</g>
+								<text class="sample"></text>
+							</svg>
+						</div>
+						<div class="frame-size"></div>
+					</div>
+				</div>
+
+				<section class="output">
+					<div class="output-actions">
+						<button class="tool-btn" data-action="copy">Copy code</button>
+						<button class="tool-btn" data-action="reset">Reset</button>
+						<span class="copy-status" aria-live="polite"></span>
+					</div>
+					<pre class="code-out"></pre>
+				</section>
+			</main>
+
+			<!-- ── CSS selector GUI area ─────────────────────────────────────── -->
+			<aside class="css-selector" aria-label="SVG text editor">
+				<div class="element-rule">
+					<span>
+						<span class="element-selector">text.sample</span>
+						<span class="element-curly-bracket-symbol-left">&#123;</span>
+					</span>
+					<div class="declaration-block"></div>
+					<span class="element-curly-bracket-symbol-right">&#125;</span>
+				</div>
+			</aside>
+		</div>
+
+		<script>
+			const SAMPLE_TEXT = 'Sphinx of black quartz, judge my vow';
+
+			// A declaration's value is its parts joined by spaces; a keyword part
+			// only counts when ticked.
+			const select = (options, value = options[0]) => ({ type: 'select', options, value });
+			const color = (value, initial) => ({ type: 'color', value, initial });
+			const keyword = word => ({ type: 'keyword', word });
+			// free-form value with −/+ steppers. `unit` is used for a bare number
+			// and when stepping off a keyword; `step` overrides the step size;
+			// `check` overrides validating against the property.
+			const text = (value, { placeholder = '', unit = 'px', check, step } = {}) => ({ type: 'text', value, placeholder, unit, check, step });
+			// units big enough that a step of 1 is too coarse
+			const FINE_UNITS = ['em', 'rem', 'lh', 'rlh', 'ex', 'ch', 'cap', 'ic', 'in', 'cm'];
+			const FAMILIES = ["'Open Sans', sans-serif", "'EB Garamond', serif", "'JetBrains Mono', monospace", 'sans-serif', 'serif', 'monospace', 'system-ui', 'cursive'];
+			const WEIGHTS = ['normal', 'bold', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
+
+			// attribute values aren't CSS, so they get their own checks
+			const NUMBER = '-?(?:\\d+\\.?\\d*|\\.\\d+)';
+			const LENGTH = `${NUMBER}(?:px|em|rem|ex|%)?`;
+			const listOf = item => new RegExp(`^${item}(?:[\\s,]+${item})*$`);
+			const optional = re => v => v === '' || re.test(v);
+			const attr = (value, re, options = {}) => text(value, { unit: '', check: optional(re), ...options });
+
+			// `kind: 'attr'` rows are set as attributes on <text>; the rest are CSS.
+			// Every CSS default is the initial value; where that's a keyword a
+			// picker can't show (none), `initial` is emitted until it's touched.
+			const GROUPS = [
+				{
+					comment: 'position (attributes)',
+					declarations: [
+						{ prop: 'x', kind: 'attr', required: true, parts: [attr('24', listOf(LENGTH))] },
+						{ prop: 'y', kind: 'attr', required: true, parts: [attr('96', listOf(LENGTH))] },
+						{ prop: 'dx', kind: 'attr', parts: [attr('', listOf(LENGTH), { placeholder: '0 4 8' })], note: 'a list shifts each glyph in turn' },
+						{ prop: 'dy', kind: 'attr', parts: [attr('', listOf(LENGTH), { placeholder: '0 -4 4' })] },
+						{ prop: 'rotate', kind: 'attr', parts: [attr('', listOf(NUMBER), { placeholder: '0 10 20', step: 5 })], note: 'degrees per glyph; the last one repeats' },
+					],
+				},
+				{
+					comment: 'length (attributes)',
+					declarations: [
+						{ prop: 'textLength', kind: 'attr', parts: [attr('', new RegExp(`^${LENGTH}$`), { placeholder: '400', step: 10 })], note: '− / + start from the natural length' },
+						{ prop: 'lengthAdjust', kind: 'attr', parts: [select(['spacing', 'spacingAndGlyphs'])], note: 'needs textLength' },
+					],
+				},
+				{
+					comment: 'anchor & baseline',
+					declarations: [
+						{ prop: 'text-anchor', parts: [select(['start', 'middle', 'end'])] },
+						{ prop: 'dominant-baseline', parts: [select(['auto', 'alphabetic', 'central', 'middle', 'hanging', 'ideographic', 'mathematical', 'text-before-edge', 'text-after-edge'])] },
+						{ prop: 'writing-mode', parts: [select(['horizontal-tb', 'vertical-rl', 'vertical-lr'])] },
+						{ prop: 'direction', parts: [select(['ltr', 'rtl'])], note: 'flips which end text-anchor start/end means' },
+					],
+				},
+				{
+					comment: 'fill',
+					declarations: [
+						{ prop: 'fill', parts: [color(null)] },
+						{ prop: 'fill-opacity', parts: [text('1', { unit: '', step: 0.05 })] },
+						{ prop: 'opacity', parts: [text('1', { unit: '', step: 0.05 })], note: 'fades fill and stroke together' },
+					],
+				},
+				{
+					comment: 'stroke',
+					declarations: [
+						{ prop: 'stroke', parts: [color(null, 'none')] },
+						{ prop: 'stroke-width', parts: [text('1px', { step: 0.5 })] },
+						{ prop: 'stroke-opacity', parts: [text('1', { unit: '', step: 0.05 })] },
+						{ prop: 'paint-order', parts: [select(['normal', 'stroke', 'fill', 'stroke markers fill'])], note: 'stroke paints the outline behind the fill' },
+					],
+				},
+				{
+					comment: 'stroke joins & dashes',
+					declarations: [
+						{ prop: 'stroke-linejoin', parts: [select(['miter', 'round', 'bevel'])] },
+						{ prop: 'stroke-linecap', parts: [select(['butt', 'round', 'square'])] },
+						{ prop: 'stroke-miterlimit', parts: [text('4', { unit: '' })] },
+						{ prop: 'stroke-dasharray', parts: [text('none', { placeholder: '4 2, 10% 5%' })] },
+						{ prop: 'stroke-dashoffset', parts: [text('0px')] },
+					],
+				},
+				{
+					comment: 'font',
+					declarations: [
+						{ prop: 'font-family', parts: [select(FAMILIES)] },
+						{ prop: 'font-size', parts: [text('medium', { placeholder: '1.5rem, 40px, clamp()' })] },
+						{ prop: 'font-weight', parts: [select(WEIGHTS)] },
+						{ prop: 'font-style', parts: [select(['normal', 'italic', 'oblique'])] },
+					],
+				},
+				{
+					comment: 'spacing & rendering',
+					declarations: [
+						{ prop: 'letter-spacing', parts: [text('normal', { unit: 'em' })] },
+						{ prop: 'word-spacing', parts: [text('normal', { unit: 'em' })] },
+						{ prop: 'text-decoration-line', parts: [select(['none', 'underline', 'overline', 'line-through'])] },
+						{ prop: 'text-rendering', parts: [select(['auto', 'optimizeSpeed', 'optimizeLegibility', 'geometricPrecision'])] },
+					],
+				},
+			];
+
+			const sample = document.querySelector('.sample');
+			const sampleInput = document.querySelector('.sample-input');
+			const guideX = document.querySelector('.guide-x');
+			const guideY = document.querySelector('.guide-y');
+			const frame = document.querySelector('.preview-frame');
+			const frameSize = document.querySelector('.frame-size');
+			const declarationBlock = document.querySelector('.declaration-block');
+			const codeOut = document.querySelector('.code-out');
+			const copyStatus = document.querySelector('.copy-status');
+
+			// rows: { prop, kind, toggle, read() }
+			const rows = [];
+
+			function el(tag, props = {}, children = []) {
+				const node = Object.assign(document.createElement(tag), props);
+				node.append(...children);
+				return node;
+			}
+
+			// ── OKLCH color math (Björn Ottosson's OKLab matrices) ──
+			const srgbToLinear = c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+
+			function srgbToOklch(r, g, b) {
+				[r, g, b] = [r, g, b].map(srgbToLinear);
+				const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+				const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+				const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+				const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+				const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+				const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+				const C = Math.hypot(A, B);
+				// greys have no meaningful hue; park them at 0
+				const H = C < 1e-4 ? 0 : ((Math.atan2(B, A) * 180) / Math.PI + 360) % 360;
+				return { l: L, c: C, h: H };
+			}
+
+			// linear sRGB, unclamped — anything outside 0..1 is out of gamut
+			function oklchToLinearSrgb({ l, c, h }) {
+				const A = c * Math.cos((h * Math.PI) / 180);
+				const B = c * Math.sin((h * Math.PI) / 180);
+				const l_ = (l + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+				const m_ = (l - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+				const s_ = (l - 0.0894841775 * A - 1.291485548 * B) ** 3;
+				return [
+					4.0767416621 * l_ - 3.3077115913 * m_ + 0.2309699292 * s_,
+					-1.2684380046 * l_ + 2.6097574011 * m_ - 0.3413193965 * s_,
+					-0.0041960863 * l_ - 0.7034186147 * m_ + 1.707614701 * s_,
+				];
+			}
+
+			const inSrgb = color => oklchToLinearSrgb(color).every(v => v >= -1e-4 && v <= 1 + 1e-4);
+
+			const round = (n, places) => +n.toFixed(places);
+			// CSS Color 4 syntax: space-separated channels, optional ` / alpha`
+			const alphaSuffix = a => (a < 1 ? ` / ${round(a, 2)}` : '');
+			const formatOklch = ({ l, c, h, a }) => `oklch(${round(l * 100, 3)}% ${round(c, 5)} ${round(h, 3)}${alphaSuffix(a)})`;
+
+			// oklch() strings are parsed directly so wide-gamut values survive;
+			// any other CSS color goes through a 1px canvas (clamped to sRGB)
+			function parseColor(text) {
+				const match = text
+					.trim()
+					.match(/^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)(?:deg)?\s*(?:\/\s*([\d.]+)(%?))?\s*\)$/i);
+				if (match) {
+					const [, l, lPct, c, h, a, aPct] = match;
+					return {
+						l: lPct ? l / 100 : +l,
+						c: +c,
+						h: +h % 360,
+						a: a === undefined ? 1 : aPct ? a / 100 : +a,
+					};
+				}
+				if (!CSS.supports('color', text)) return null;
+				const ctx = el('canvas', { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
+				ctx.fillStyle = text;
+				ctx.fillRect(0, 0, 1, 1);
+				const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+				return { ...srgbToOklch(r / 255, g / 255, b / 255), a: round(a / 255, 2) };
+			}
+
+			const linearToSrgb = c => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+			const clamp01 = n => Math.min(1, Math.max(0, n));
+
+			// gamut-clipped to sRGB, 0..255
+			const toRgb255 = color => oklchToLinearSrgb(color).map(v => Math.round(linearToSrgb(clamp01(v)) * 255));
+
+			function rgbToHsl(r, g, b) {
+				[r, g, b] = [r, g, b].map(n => n / 255);
+				const max = Math.max(r, g, b);
+				const min = Math.min(r, g, b);
+				const l = (max + min) / 2;
+				const d = max - min;
+				if (!d) return [0, 0, Math.round(l * 100)];
+				const s = d / (1 - Math.abs(2 * l - 1));
+				const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+				return [Math.round((h * 60 + 360) % 360), Math.round(s * 100), Math.round(l * 100)];
+			}
+
+			// like VS Code, clicking the header cycles through these
+			const COLOR_FORMATS = {
+				oklch: formatOklch,
+				hex: color => {
+					const alpha = color.a < 1 ? [Math.round(color.a * 255)] : [];
+					return '#' + [...toRgb255(color), ...alpha].map(n => n.toString(16).padStart(2, '0')).join('');
+				},
+				rgb: color => `rgb(${toRgb255(color).join(' ')}${alphaSuffix(color.a)})`,
+				hsl: color => {
+					const [h, s, l] = rgbToHsl(...toRgb255(color));
+					return `hsl(${h} ${s}% ${l}%${alphaSuffix(color.a)})`;
+				},
+			};
+
+			// ── the square: an HSV-style plane built in OKLCH ──
+			// For a hue, the sRGB gamut in the lightness/chroma plane is roughly a
+			// triangle: white, black, and the "cusp" (the most saturated colour).
+			// The square is stretched over that triangle, so like VS Code's it
+			// runs white → pure hue across the top and fades to black downwards:
+			//   x = saturation (white → cusp), y = darkness (→ black)
+			function maxChroma(l, h) {
+				let lo = 0;
+				let hi = 0.5;
+				for (let i = 0; i < 18; i++) {
+					const mid = (lo + hi) / 2;
+					inSrgb({ l, c: mid, h }) ? (lo = mid) : (hi = mid);
+				}
+				return lo;
+			}
+
+			function findCusp(h) {
+				let best = { l: 0.5, c: 0 };
+				for (let l = 0.02; l < 1; l += 0.02) {
+					const c = maxChroma(l, h);
+					if (c > best.c) best = { l, c };
+				}
+				// refine around the coarse peak
+				let lo = best.l - 0.02;
+				let hi = best.l + 0.02;
+				for (let i = 0; i < 16; i++) {
+					const a = lo + (hi - lo) / 3;
+					const b = hi - (hi - lo) / 3;
+					maxChroma(a, h) < maxChroma(b, h) ? (lo = a) : (hi = b);
+				}
+				const l = (lo + hi) / 2;
+				return { l, c: maxChroma(l, h) };
+			}
+
+			const planeToLc = (x, y, cusp) => {
+				const v = 1 - y;
+				return { l: v * (1 - x + x * cusp.l), c: v * x * cusp.c };
+			};
+
+			// the white→cusp edge bows inward a little for some hues; pull picked
+			// colours back into sRGB so the CSS matches what the square shows
+			const pickFromPlane = (x, y, h, cusp) => {
+				const { l, c } = planeToLc(x, y, cusp);
+				return { l, c: inSrgb({ l, c, h }) ? c : maxChroma(l, h) };
+			};
+
+			const lcToPlane = ({ l, c }, cusp) => {
+				const s = c / cusp.c;
+				const v = clamp01(l + s * (1 - cusp.l));
+				return { x: v ? clamp01(s / v) : 0, y: 1 - v };
+			};
+
+			const PLANE_W = 256;
+			const PLANE_H = 160;
+
+			function drawPlane(canvas, h, cusp) {
+				const ctx = canvas.getContext('2d');
+				const image = ctx.createImageData(PLANE_W, PLANE_H);
+				for (let py = 0; py < PLANE_H; py++) {
+					for (let px = 0; px < PLANE_W; px++) {
+						const lc = planeToLc(px / (PLANE_W - 1), py / (PLANE_H - 1), cusp);
+						const rgb = toRgb255({ ...lc, h });
+						image.data.set([...rgb, 255], (py * PLANE_W + px) * 4);
+					}
+				}
+				ctx.putImageData(image, 0, 0);
+			}
+
+			// hue strip: each hue at its cusp, i.e. the purest colour available
+			const HUE_TRACK = `linear-gradient(to bottom, ${Array.from({ length: 37 }, (_, i) => {
+				const h = i * 10;
+				return `rgb(${toRgb255({ ...findCusp(h), h }).join(' ')})`;
+			}).join(', ')})`;
+
+			// pointer drag reporting 0..1 coordinates within the element
+			function onDrag(target, move) {
+				const handle = e => {
+					const box = target.getBoundingClientRect();
+					move(clamp01((e.clientX - box.left) / box.width), clamp01((e.clientY - box.top) / box.height));
+				};
+				target.addEventListener('pointerdown', e => {
+					target.setPointerCapture(e.pointerId);
+					target.addEventListener('pointermove', handle);
+					target.addEventListener('lostpointercapture', () => target.removeEventListener('pointermove', handle), { once: true });
+					handle(e);
+				});
+			}
+
+			// arrow keys nudge; shift moves 10x
+			function onArrows(target, nudge) {
+				target.addEventListener('keydown', e => {
+					const dir = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+					if (!dir) return;
+					e.preventDefault();
+					nudge(...dir.map(d => d * (e.shiftKey ? 10 : 1)));
+				});
+			}
+
+			const inkFor = ({ l, a }) => (l > 0.6 || a < 0.4 ? '#000' : '#fff');
+			const svg = (markup, attrs) => Object.assign(document.createElementNS('http://www.w3.org/2000/svg', 'svg'), { innerHTML: markup }, attrs);
+			// ◐ — same glyph VS Code shows in the picker header
+			const halfCircleIcon = () => {
+				const icon = svg('<circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 0 0 13z" fill="currentColor"/>');
+				icon.setAttribute('viewBox', '0 0 16 16');
+				icon.setAttribute('aria-hidden', 'true');
+				return icon;
+			};
+
+			let pickerCount = 0;
+
+			function oklchPicker(initial) {
+				const original = parseColor(initial) ?? { l: 0, c: 0, h: 0, a: 1 };
+				const state = { ...original };
+				let cusp = findCusp(state.h);
+				// kept separately so dragging the hue keeps the thumb where it is,
+				// and so black/white don't forget their saturation
+				let pos = lcToPlane(state, cusp);
+				const formats = Object.keys(COLOR_FORMATS);
+				let format = 'oklch';
+				let drawnHue = null;
+				const anchor = `--oklch-picker-${++pickerCount}`;
+
+				const swatch = el('button', { type: 'button', className: 'oklch-swatch', title: 'pick a color' });
+				swatch.style.anchorName = anchor;
+
+				const label = el('span');
+				const current = el('button', { type: 'button', title: 'click to toggle color format' }, [halfCircleIcon(), label]);
+				const revert = el('button', { type: 'button', className: 'oklch-original', title: 'click to revert to the original color' });
+				revert.style.setProperty('--swatch', formatOklch(original));
+
+				const canvas = el('canvas', { width: PLANE_W, height: PLANE_H });
+				const planeThumb = el('div', { className: 'oklch-plane-thumb' });
+				const plane = el('div', { className: 'oklch-plane', tabIndex: 0, ariaLabel: 'saturation and brightness' }, [canvas, planeThumb]);
+
+				const alphaThumb = el('div', { className: 'oklch-strip-thumb' });
+				const alpha = el('div', { className: 'oklch-strip alpha', tabIndex: 0, ariaLabel: 'opacity' }, [alphaThumb]);
+				const hueThumb = el('div', { className: 'oklch-strip-thumb' });
+				const hue = el('div', { className: 'oklch-strip hue', tabIndex: 0, ariaLabel: 'hue' }, [hueThumb]);
+				hue.style.setProperty('--track', HUE_TRACK);
+
+				const popover = el('div', { className: 'oklch-popover', popover: 'auto' }, [
+					el('div', { className: 'oklch-header' }, [current, revert]),
+					el('div', { className: 'oklch-body' }, [plane, alpha, hue]),
+				]);
+				popover.style.positionAnchor = anchor;
+				swatch.popoverTargetElement = popover;
+
+				function sync() {
+					const value = formatOklch(state);
+					swatch.style.setProperty('--swatch', value);
+					current.style.setProperty('--swatch', value);
+					current.style.setProperty('--ink', inkFor(state));
+					label.textContent = COLOR_FORMATS[format](state);
+					for (const key of ['l', 'c', 'h']) popover.style.setProperty(`--${key}`, state[key]);
+					planeThumb.style.left = `${pos.x * 100}%`;
+					planeThumb.style.top = `${pos.y * 100}%`;
+					alphaThumb.style.top = `${(1 - state.a) * 100}%`;
+					hueThumb.style.top = `${(state.h / 360) * 100}%`;
+					if (state.h !== drawnHue) drawPlane(canvas, (drawnHue = state.h), cusp);
+				}
+
+				// nothing native fires `input` here, so announce changes ourselves
+				function update(changes) {
+					Object.assign(state, changes);
+					sync();
+					popover.dispatchEvent(new Event('input', { bubbles: true }));
+				}
+
+				const movePlane = (x, y) => {
+					pos = { x: clamp01(x), y: clamp01(y) };
+					update(pickFromPlane(pos.x, pos.y, state.h, cusp));
+				};
+				const moveHue = h => {
+					h = Math.min(360, Math.max(0, h));
+					cusp = findCusp(h);
+					update({ h, ...pickFromPlane(pos.x, pos.y, h, cusp) });
+				};
+
+				onDrag(plane, movePlane);
+				onDrag(alpha, (x, y) => update({ a: 1 - y }));
+				onDrag(hue, (x, y) => moveHue(y * 360));
+				onArrows(plane, (dx, dy) => movePlane(pos.x + dx * 0.01, pos.y + dy * 0.01));
+				onArrows(alpha, (dx, dy) => update({ a: clamp01(state.a - (dy || -dx) * 0.01) }));
+				onArrows(hue, (dx, dy) => moveHue(state.h + (dy || dx)));
+
+				current.addEventListener('click', () => {
+					format = formats[(formats.indexOf(format) + 1) % formats.length];
+					update({});
+				});
+				revert.addEventListener('click', () => {
+					cusp = findCusp(original.h);
+					pos = lcToPlane(original, cusp);
+					update(original);
+				});
+
+				sync();
+				return {
+					node: el('span', { className: 'oklch-picker' }, [swatch, popover]),
+					read: () => COLOR_FORMATS[format](state),
+				};
+			}
+
+			function buildPart(part, prop) {
+				if (part.type === 'text') {
+					// free-form value, checked against the property itself; while it's
+					// invalid the last good value stays applied
+					const input = el('input', { type: 'text', value: part.value, placeholder: part.placeholder, spellcheck: false });
+					const check = part.check ?? (v => checkValue(prop, v));
+					let valid = part.value;
+					input.addEventListener('input', () => {
+						const ok = check(input.value.trim());
+						input.setCustomValidity(ok ? '' : `not a valid ${prop}`);
+						if (ok) valid = input.value.trim();
+					});
+
+					// −/+ (and ↑/↓ in the box) nudge a plain `<number><unit>` value;
+					// shift steps 10x. A keyword or an empty box steps off from the
+					// current number when there is one, else from 0; anything else
+					// (calc(), lists) is left alone.
+					const step = (dir, big) => {
+						const value = input.value.trim();
+						const match = value.match(/^(-?\d*\.?\d+)([a-z%]*)$/i) ?? (/^[a-z-]*$/i.test(value) && (currentNumber(prop) ?? [, 0, part.unit]));
+						if (!match) return;
+						const unit = match[2] || part.unit;
+						const size = part.step ?? (FINE_UNITS.includes(unit.toLowerCase()) ? 0.1 : 1);
+						input.value = round(+match[1] + dir * size * (big ? 10 : 1), 3) + unit;
+						input.dispatchEvent(new Event('input', { bubbles: true }));
+					};
+					const stepButton = (dir, label) => {
+						const button = el('button', { type: 'button', className: 'step-btn', textContent: label, ariaLabel: `${dir < 0 ? 'decrease' : 'increase'} ${prop}` });
+						button.addEventListener('click', e => step(dir, e.shiftKey));
+						return button;
+					};
+					input.addEventListener('keydown', e => {
+						const dir = { ArrowUp: 1, ArrowDown: -1 }[e.key];
+						if (!dir) return;
+						e.preventDefault();
+						step(dir, e.shiftKey);
+					});
+
+					return { node: el('span', { className: 'text-field' }, [input, stepButton(-1, '−'), stepButton(1, '+')]), read: () => valid };
+				}
+				if (part.type === 'select') {
+					const input = el('select', {}, part.options.map(o => el('option', { value: o, textContent: o })));
+					input.value = part.value;
+					return { node: input, read: () => input.value };
+				}
+				if (part.type === 'color') {
+					const picker = oklchPicker(part.value ?? colorFallback(prop));
+					const readout = el('span', { className: 'value-readout' });
+					let touched = false;
+					const read = () => (part.initial && !touched ? part.initial : picker.read());
+					picker.node.addEventListener('input', () => {
+						touched = true;
+						readout.textContent = read();
+					});
+					readout.textContent = read();
+					return { node: el('span', { className: 'oklch-field' }, [picker.node, readout]), read };
+				}
+				// keyword
+				const input = el('input', { type: 'checkbox' });
+				return {
+					node: el('label', {}, [input, part.word]),
+					read: () => (input.checked ? part.word : ''),
+				};
+			}
+
+			// `required` rows are always applied; `on` rows start ticked
+			function buildDeclaration(declaration) {
+				const { prop, note, initial, required, on } = declaration;
+				let { parts } = declaration;
+				// a lone select starts on whatever is actually in effect
+				if (parts.length === 1 && parts[0].type === 'select') {
+					const current = currentValue(prop);
+					if (parts[0].options.includes(current)) parts = [{ ...parts[0], value: current }];
+				}
+				const syntax = syntaxFor(declaration);
+				const toggle = el('input', {
+					type: 'checkbox',
+					className: 'declaration-toggle',
+					title: required ? `${prop} is always set` : `toggle ${prop}`,
+					checked: Boolean(required || on),
+					disabled: Boolean(required),
+				});
+				const built = parts.map(part => buildPart(part, prop));
+				const value = el('span', { className: 'declaration-value' }, built.map(b => b.node));
+
+				const row = el('div', { className: 'declaration' }, [
+					toggle,
+					el('span', { className: 'declaration-property', textContent: syntax.label }),
+					el('span', { className: 'declaration-colon', textContent: syntax.colon }),
+					value,
+					el('span', { className: 'declaration-semicolon', textContent: syntax.end }),
+				]);
+				if (note) row.append(el('span', { className: 'declaration-note', textContent: `/* ${note} */` }));
+
+				// changing a value turns its declaration on
+				let touched = false;
+				value.addEventListener('input', () => {
+					touched = true;
+					toggle.checked = true;
+				});
+
+				rows.push({
+					...declaration,
+					toggle,
+					read: () => (initial && !touched ? initial : built.map(b => b.read()).filter(Boolean).join(' ')),
+				});
+				return row;
+			}
+
+			function buildGroups() {
+				declarationBlock.replaceChildren();
+				rows.length = 0;
+				// one wrapper per group so each group starts its own carousel slide
+				for (const group of GROUPS) {
+					declarationBlock.append(
+						el('div', { className: 'declaration-group' }, [
+							el('span', { className: 'declaration-comment', textContent: `/* ${group.comment} */` }),
+							...group.declarations.map(buildDeclaration),
+						]),
+					);
+				}
+			}
+
+			// ── how the shared row builder reads the SVG <text> ──
+			const checkValue = (prop, v) => CSS.supports(prop, v);
+			const currentValue = prop => getComputedStyle(sample).getPropertyValue(prop);
+			function currentNumber(prop) {
+				if (prop === 'textLength') return [, round(sample.getComputedTextLength(), 1), ''];
+				return currentValue(prop).match(/^(-?\d*\.?\d+)(px)$/);
+			}
+			function colorFallback(prop) {
+				const computed = currentValue(prop);
+				return parseColor(computed) ? computed : getComputedStyle(sample).color;
+			}
+			const syntaxFor = ({ prop, kind }) => (kind === 'attr' ? { label: prop, colon: '=', end: '' } : { label: prop, colon: ':', end: ';' });
+
+			const escapeXml = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+			function build() {
+				// drop applied values so defaults read the browser's own
+				sample.removeAttribute('style');
+				for (const { prop } of GROUPS.flatMap(g => g.declarations).filter(d => d.kind === 'attr')) sample.removeAttribute(prop);
+				sample.textContent = sampleInput.value = SAMPLE_TEXT;
+				buildGroups();
+				frame.style.inlineSize = '';
+				render();
+			}
+
+			function render() {
+				const css = [];
+				let attrs = '';
+				for (const { prop, kind, toggle, read } of rows) {
+					const value = read();
+					const on = toggle.checked && value !== '';
+					if (kind === 'attr') {
+						on ? sample.setAttribute(prop, value) : sample.removeAttribute(prop);
+						if (on) attrs += ` ${prop}="${escapeXml(value)}"`;
+					} else {
+						on ? sample.style.setProperty(prop, value) : sample.style.removeProperty(prop);
+						if (on) css.push(`\t${prop}: ${value};`);
+					}
+				}
+
+				// the crosshair follows the first x/y value
+				const first = list => (list.numberOfItems ? list.getItem(0).value : 0);
+				const x = first(sample.x.baseVal);
+				const y = first(sample.y.baseVal);
+				guideX.setAttribute('x1', x);
+				guideX.setAttribute('x2', x);
+				guideY.setAttribute('y1', y);
+				guideY.setAttribute('y2', y);
+
+				codeOut.textContent = [
+					css.length ? `text.sample {\n${css.join('\n')}\n}` : '/* no CSS declarations enabled */',
+					`<text class="sample"${attrs}>${escapeXml(sample.textContent)}</text>`,
+				].join('\n\n');
+			}
+
+			declarationBlock.addEventListener('input', render);
+			declarationBlock.addEventListener('change', render);
+			sampleInput.addEventListener('input', () => {
+				sample.textContent = sampleInput.value;
+				render();
+			});
+
+			new ResizeObserver(() => {
+				frameSize.textContent = `frame: ${Math.round(frame.getBoundingClientRect().width)}px wide`;
+			}).observe(frame);
+
+			document.querySelector('[data-action="reset"]').addEventListener('click', build);
+			document.querySelector('[data-action="copy"]').addEventListener('click', async () => {
+				try {
+					await navigator.clipboard.writeText(codeOut.textContent);
+					copyStatus.textContent = 'Copied.';
+				} catch {
+					copyStatus.textContent = 'Copy failed — select the text below instead.';
+				}
+				setTimeout(() => (copyStatus.textContent = ''), 2000);
+			});
+
+			build();
+		</script>
+	</body>
+</html>

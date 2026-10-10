@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap"
+			rel="stylesheet"
+		/>
+		<title>tooBox</title>
+	</head>
+	<body>
+		<section>
+			<h1>tooBox</h1>
+			<span
+				>A web GUI (Graphical User Interface) that allows users to interact with
+				web through visual elements.
+			</span>
+			<!--
+        Initial Setup form for the site.
+
+        Element options:
+          HTML input:text field
+            - create the html element specified in the input field and add it to the viewbox
+            - max size equal to the viewport block-size and inline-size
+            -CSS input:text field
+            - create the css code specified in the input field and apply it to the viewbox
+            - max size equal to the viewport block-size and inline-size 
+
+        Block-size input:text field
+          - max size equal to the viewport block-size
+
+        Inline-size input:text field 
+          - max size equal to the viewport inline-size
+
+        Background color input:color field
+        - input:color = light || default color = oklch(90% 0 0);
+        - input:color = dark || default color =  oklch(20% 0 0);
+        
+        Light Dark Mode input:checkbox field
+          - input:checkbox = system preference default
+          - input:checkbox = light
+          - input:checkbox = dark
+
+        Start the site button 
+        -->
+			<form action="" method="get" class="">
+        <h2>viewport settings</h2>
+        <div class="ビューポート-viewport-000-settings">
+          <fieldset>
+            <legend>horizontal & vertical dimensions</legend>
+            <div class="">
+              <label for="block-size">block-size: </label>
+              <input type="text" name="block-size" id="block-size" required />
+            </div>
+            
+            <div class="">
+              <label for="inline-size">inline-size: </label>
+              <input type="text" name="inline-size" id="inline-size" required />
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>viewport color choice options:</legend>
+            <fieldset class="">
+              <legend>light-dark-color-choice:</legend>
+              <label for="background-color-light">background-color-light: </label>
+              <input type="color" name="background-color-light" id="background-color-light" checked />
+              
+              <label for="background-color-dark">background-color-dark: </label>
+              <input type="color" name="background-color-dark" id="background-color-dark" />
+            </fieldset>
+            
+            <fieldset class="">
+              <legend>light-dark-preference:</legend>
+              <label for="system-preference">system-preference: </label>
+              <input type="radio" name="light-dark-theme" id="system-preference" />
+              
+              <label for="light-mode-theme">light-mode-theme: </label>
+              <input type="radio" name="light-dark-theme" id="light-mode-theme" />
+              
+              <label for="dark-mode-theme">dark-mode-theme: </label>
+              <input type="radio" name="light-dark-theme" id="dark-mode-theme" />
+            </fieldset>
+          </fieldset>
+          
+        </div>
+				<div class="">
+					<input type="submit" value="Submit" />
+				</div>
+			</form>
+		</section>
+
+		<main class="ビューボックス-viewbox">
+			<!--
+      Viewbox translate to ビューボックス
+      Viewport translate to ビューポート
+      Style translate to スタイル
+      
+      Definition of Viewport vs. ViewBox
+
+      The **viewport** is the visible area through which you can see a portion of the viewing screen graphic.
+        It acts like a window, determining what part of the graphic is currently displayed to the user.
+
+      The **viewBox** defines the coordinate system and dimensions for the content.
+        It allows for panning and zooming, similar to how a telescope works.
+
+        Site viewbox information & specs:
+          site viewbox = 100% of the content window
+            - css code result viewbox = 75% of the site viewbox
+            - html css property form result viewbox = 25% of the site viewbox
+
+      -->
+			<div class="ビューポート-viewport-000">
+        <!-- 
+          css code result viewbox:
+            - contains the result from the viewport settings form
+              - the html element created from the viewport settings form
+                - the css code created from the viewport settings form
+
+            - contains the result of the css code input form
+          -->
+          <div class="html-example-element"><!-- the html element created from the viewport settings form --></div>
+      </div>
+
+			<div class="スタイル-style-form">
+        <!-- 
+          html css property form result viewbox
+          - contains the result from the html css property form
+          - the html element created from the html css property form
+          - the css code created from the html css property form
+          -->
+          <div class="スタイル-style-viewport-000">
+            <form action="" method="get" class="">
+              <h2>additional settings</h2>
+              <div class="ビューポート-viewport-000-settings">
+                <fieldset>
+                  <legend>horizontal & vertical dimensions</legend>
+                  <div class="">
+                    <label for="block-size">block-size: </label>
+                    <input type="text" name="block-size" id="block-size" required />
+                  </div>
+                  
+                  <div class="">
+                    <label for="inline-size">inline-size: </label>
+                    <input type="text" name="inline-size" id="inline-size" required />
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend>viewport color choice options:</legend>
+                  <fieldset class="">
+                    <legend>light-dark-color-choice:</legend>
+                    <label for="background-color-light">background-color-light: </label>
+                    <input type="color" name="background-color-light" id="background-color-light" />
+                    
+                    <label for="background-color-dark">background-color-dark: </label>
+                    <input type="color" name="background-color-dark" id="background-color-dark" />
+                  </fieldset>
+                  
+                  <fieldset class="">
+                    <legend>light-dark-preference:</legend>
+                    <label for="system-preference">system-preference: </label>
+                    <input type="radio" name="light-dark-theme" id="system-preference" />
+                    
+                    <label for="light-mode-theme">light-mode-theme: </label>
+                    <input type="radio" name="light-dark-theme" id="light-mode-theme" />
+                    
+                    <label for="dark-mode-theme">dark-mode-theme: </label>
+                    <input type="radio" name="light-dark-theme" id="dark-mode-theme" />
+                  </fieldset>
+                </fieldset>
+              </div>
+            </form>
+          </div>
+			</div>
+		</main>
+	</body>
+</html>

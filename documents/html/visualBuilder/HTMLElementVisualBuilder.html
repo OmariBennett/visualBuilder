@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Open+Sans:wght@400;500;600&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="stylesheet" href="/src/assets/css/reset.css" />
+		<link rel="stylesheet" href="/src/assets/css/style.css" />
+		<script type="module" src="/src/main.ts"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>toolbox — visual builder</title>
+	</head>
+
+	<body>
+		<br />
+		<a href="/index.html">Home</a>
+		<br />
+		<br />
+		<br />
+		<div class="app-shell">
+			<!-- ── Topbar ──────────────────────────────────────────────────────── -->
+			<div class="topbar">
+				<span class="topbar-title">toolbox</span>
+				<div class="topbar-sep"></div>
+				<button
+					id="preset-mobile"
+					class="btn topbar-btn"
+					title="Mobile 375×812"
+				>
+					375
+				</button>
+				<button
+					id="preset-tablet"
+					class="btn topbar-btn"
+					title="Tablet 768×1024"
+				>
+					768
+				</button>
+				<button
+					id="preset-desktop"
+					class="btn topbar-btn"
+					title="Desktop 1440×900"
+				>
+					1440
+				</button>
+				<div class="topbar-sep"></div>
+				<label class="topbar-label"
+					>W
+					<input type="number" id="canvas-w" value="375" min="100" max="3000"
+				/></label>
+				<label class="topbar-label"
+					>H
+					<input type="number" id="canvas-h" value="812" min="100" max="6000"
+				/></label>
+				<div class="topbar-spacer"></div>
+				<button id="btn-view-code" class="btn topbar-btn">View Code</button>
+			</div>
+
+			<!-- ── Workspace ──────────────────────────────────────────────────── -->
+			<div class="workspace">
+				<!-- Floating element palette -->
+				<aside class="element-palette">
+					<div class="palette-title">Elements</div>
+					<button class="btn palette-btn" data-add-element="div">
+						<code>&lt;div&gt;</code> Div
+					</button>
+					<button class="btn palette-btn" data-add-element="section">
+						<code>&lt;section&gt;</code> Section
+					</button>
+					<button class="btn palette-btn" data-add-element="p">
+						<code>&lt;p&gt;</code> Paragraph
+					</button>
+					<button class="btn palette-btn" data-add-element="h1">
+						<code>&lt;h1&gt;</code> Heading 1
+					</button>
+					<button class="btn palette-btn" data-add-element="h2">
+						<code>&lt;h2&gt;</code> Heading 2
+					</button>
+					<button class="btn palette-btn" data-add-element="h3">
+						<code>&lt;h3&gt;</code> Heading 3
+					</button>
+					<button class="btn palette-btn" data-add-element="button">
+						<code>&lt;button&gt;</code> Button
+					</button>
+					<button class="btn palette-btn" data-add-element="img">
+						<code>&lt;img&gt;</code> Image
+					</button>
+					<button class="btn palette-btn" data-add-element="input">
+						<code>&lt;input&gt;</code> Input
+					</button>
+					<button class="btn palette-btn" data-add-element="ul">
+						<code>&lt;ul&gt;</code> List
+					</button>
+					<button class="btn palette-btn" data-add-element="a">
+						<code>&lt;a&gt;</code> Link
+					</button>
+				</aside>
+
+				<!-- Scrollable canvas area -->
+				<div class="canvas-scroll">
+					<div class="canvas-centering">
+						<div class="canvas-wrapper" id="canvas-wrapper">
+							<iframe
+								id="canvas-iframe"
+								title="canvas"
+								sandbox="allow-scripts allow-same-origin"
+							></iframe>
+							<div id="canvas-overlay">
+								<div id="selection-box">
+									<div class="rh rh--tl" data-corner="tl"></div>
+									<div class="rh rh--tr" data-corner="tr"></div>
+									<div class="rh rh--bl" data-corner="bl"></div>
+									<div class="rh rh--br" data-corner="br"></div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Floating properties panel (hidden until element selected) -->
+				<aside class="props-panel" id="props-panel" hidden></aside>
+			</div>
+
+			<!-- ── Status bar / Layers ────────────────────────────────────────── -->
+			<div class="statusbar">
+				<span class="statusbar-label">Layers</span>
+				<div id="breadcrumb" class="breadcrumb"></div>
+				<div class="statusbar-spacer"></div>
+				<span class="statusbar-hint"
+					>Ctrl+Z undo &nbsp;·&nbsp; Ctrl+Shift+Z redo &nbsp;·&nbsp; Del
+					remove</span
+				>
+			</div>
+		</div>
+
+		<!-- ── Code export modal ─────────────────────────────────────────────── -->
+		<dialog id="code-modal" class="code-modal">
+			<div class="code-modal-header">
+				<span class="code-modal-title">Generated HTML</span>
+				<button id="btn-copy-code" class="btn">Copy</button>
+				<button id="btn-close-modal" class="btn">✕</button>
+			</div>
+			<pre id="code-output" class="code-output"></pre>
+		</dialog>
+	</body>
+</html>

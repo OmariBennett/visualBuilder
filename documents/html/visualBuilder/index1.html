@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSS Selector</title>
+  <style>
+    span {
+      /* font-size: 3rem; */
+    }
+
+    .declaration-block {
+      max-inline-size: max-content;
+      outline: 2px solid oklch(74.554% 0.10226 329.364);
+
+      @supports (display: if(supports(display: block): grid; else: block)) {
+        & {
+          padding-inline-start: var(--_element-gap);
+        }
+      }
+    }
+
+    .element-rule {
+      --_element-gap: 0.5em;
+      inline-size: max-content;
+      outline: 4px solid oklch(73.428% 0.08835 225.109);
+
+      .declaration-block {
+        --status: attr(data-declaration-composition-status type(<custom-ident>));
+        --display-composition: if(style(--status: block): grid;
+            else: inline;
+          );
+
+        @supports (display: if(supports(display: block): grid; else: block)) {
+          & {
+            display: var(--display-composition);
+          }
+        }
+      }
+    }
+
+    .temp {
+      inline-size: max-content;
+      /* outline: 2px solid oklch(85.017% 0.07142 7.693); */
+      isolation: isolate;
+      position: relative;
+
+      div {
+        display: none;
+        z-index: 1;
+        background-color: oklch(71.539% 0.1373 10.857);
+
+
+        &:hover {
+          z-index: -1;  
+        }
+
+        /* outline: 4px solid oklch(78.15% 0.20652 139.955); */
+      }
+
+
+
+
+
+      label {
+        /* all: unset; */
+        /* grid-area: layer; */
+        /* display: inline-block; */
+        outline: 4px solid oklch(71.539% 0.1373 10.857);
+        /* z-index: 1; */
+      }
+
+    }
+
+    input[type='color'] {
+      /* padding: 0; */
+      /* inline-size: 5ch; */
+      /* outline: 4px solid oklch(78.15% 0.20652 139.955); */
+      /* z-index: 1; */
+      border: none;
+      background-color: oklch(71.539% 0.1373 10.857);
+      
+      &::-webkit-color-swatch,
+      &::-moz-color-swatch {
+        border-color: transparent;
+        border-color: white;
+      }
+
+      &:hover {
+        /* outline: 4px solid oklch(78.15% 0.20652 139.955); */
+        z-index: 1;
+      }
+
+    }
+
+    .layer {
+      display: grid;
+      grid-template-areas: 'layer';
+
+      &>* {
+        grid-area: layer;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="temp layer">
+    <div class=""></div>
+    <input type="color" name="#" id="#" placeholder="1rem" value="oklch(71.539% 0.1373 10.857)">
+  </div>
+
+  <br />
+  <br />
+  <br />
+  <br />
+  <br />
+
+  <span class="element-rule">
+    <span class="element-selector">body</span>
+    <span class="element-curly-bracket-symbol-left">&#123;</span>
+
+    <!-- <span class="declaration-block" data-declaration-composition-status=""> -->
+    <span class="declaration-block" data-declaration-composition-status="block">
+      <span class="declaration" data-declaration-value-syntax="">
+        <span class="declaration-property">color</span>
+        <span class="declaration-colon">&#58;</span>
+        <span class="declaration-vlaue">red</span>
+        <span class="declaration-semicolon">&#59;</span>
+      </span>
+
+      <span class="declaration" data-declaration-value-syntax="length">
+        <span class="declaration-property">font-size</span>
+        <span class="declaration-colon">&#58;</span>
+        <span class="declaration-vlaue">1rem</span>
+        <span class="declaration-semicolon">&#59;</span>
+      </span>
+
+      <span class="declaration" data-declaration-value-syntax="color">
+        <span class="declaration-property">color</span>
+        <span class="declaration-colon">&#58;</span>
+        <input type="color" name="#" id="#" value="oklch(62.793% 0.25768 29.223)">
+        <span class="declaration-vlaue">red</span>
+        <span class="declaration-semicolon">&#59;</span>
+      </span>
+
+      <span class="declaration" data-declaration-value-syntax="select-option">
+        <span class="declaration-property">text-decoration-line</span>
+        <span class="declaration-colon">&#58;</span>
+        <span class="declaration-vlaue">
+          <select name="#" id="#">
+            <option value="#">none</option>
+            <option value="#">underline</option>
+            <option value="#">overline</option>
+          </select>
+        </span>
+        <span class="declaration-semicolon">&#59;</span>
+      </span>
+    </span>
+
+    <span class="element-curly-bracket-symbol-right">&#125;</span>
+  </span>
+
+  <br />
+
+  <span class="element-rule">
+    <span>body</span>
+    <span>&#32;</span>
+    <span>&#123;</span>
+    <span>&#9;</span>
+    <span>color</span>
+    <span>&#58;</span>
+    <span>&#32;</span>
+    <span>red</span>
+    <span>&#59;</span>
+    <span>&#125;</span>
+  </span>
+
+  <script>
+    const declaration_block = document.querySelector('.declaration-block');
+    const declaration_composition_status = declaration_block.dataset.declarationCompositionStatus.toLowerCase();
+    let attr_status = declaration_composition_status === 'block';
+    const supportsCssIf = CSS.supports(
+      "display",
+      "if(supports(display: block): grid; else: block)"
+    );
+
+    if (!supportsCssIf && attr_status) declaration_block.style.display = 'grid';
+  </script>
+
+  <!-- 			
+  * CSS rule consists of a selector and a declaration block
+  _ CSS selector
+    [selector] {
+  _ CSS declaration block
+      [declaration property name]: [declaration property value];
+      [declaration property name]: [declaration property value];
+      [declaration property name]: [declaration property value];
+      }
+  _ Row #1: CSS Rule open section
+      .selector  - string
+      .open-curly-bracket - HTML character code
+      .white-space - HTML character code
+
+  _ Row #2: CSS declaration block section
+      .tab-space - HTML character code
+      .property - string
+      .colon - HTML character code
+      .white-space - HTML character code
+      .value - string
+      .semicolon - HTML character code
+      
+  _ Row #3: CSS Rule close section
+      .close-curly-bracket - HTML character code
+
+  <pre>
+    <code>
+      [selector] {
+        [declaration property name]: [declaration property value];
+      }
+    </code>
+  </pre>
+  -->
+
+</body>
+
+</html>
